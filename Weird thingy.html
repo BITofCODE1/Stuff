@@ -1,0 +1,178 @@
+<!DOCTYPE html>
+<html>
+  <head>
+    <meta charset="utf-8">
+    <meta name="viewport" content="width=device-width">
+<style>body {
+  font-family: sans-serif;
+}
+
+.calc-man {
+  display: none;
+}</style>
+    <script src="https://cdnjs.cloudflare.com/ajax/libs/p5.js/1.1.9/p5.min.js"></script>
+    <script>// Hi c++ User!
+class Imaginary {
+  /**
+   * @param a {Number}
+   * @param b {Number}
+   */
+  constructor(a, b) {
+    this.a = a; // a
+    this.b = b; // bi
+  }
+
+  /**
+   *   (a + bi) ** 2
+   * = a ** 2 + 2 * abi - b ** 2
+   * = (a ** 2 - b ** 2) + (2ab)i
+   */
+  square() {
+    return new Imaginary(this.a ** 2 - this.b ** 2, 2 * this.a * this.b);
+  }
+
+  /**
+   * @param n {Imaginary}
+   */
+  add(n) {
+    return new Imaginary(this.a + n.a, this.b + n.b);
+  }
+}</script>
+    <script>let precision = 5; // this is how precise we want
+// we start at 5 because anything lower doesn't capture the set accurately.
+let quality = 10; // the higher the worse
+let autoCalc = true; // this is if we should change the quality and precision
+
+// the derivation from the center
+let zoom = 0.5;
+
+let cx = 0, cy = 0; // the center
+
+
+function setup() {
+  let canvas = createCanvas(500, 500);
+  canvas.parent(document.querySelector(".mandelbrot"));
+  canvas.mouseClicked(umouse);
+  canvas.mouseWheel(scrll);
+  colorMode(HSB);
+}
+
+function draw() {
+  // https://p5js.org/reference/#/p5/loadPixels
+  for (let y = 0; y < height; y += quality) {
+    for (let x = 0; x < width; x += quality) {
+      let a = map(x, 0, width, cx - 1/zoom, cx + 1/zoom); // constrain it
+      let b = map(y, 0, height, cy - 1/zoom, cy + 1/zoom);
+
+      let pair = new Imaginary(a, b);
+      let out = develop(pair);
+
+      if (out != precision) { // is not part of the set
+        let brt = map(out, 0, precision, 0, 1);
+        
+        let h = (brt * 255 * 2) % 255;
+        let s = 100;
+        let b = 255;
+        let a = map(sqrt(brt), 0, 1, 0, 255);
+
+        let ecolor = color(h, s, b, a);
+        for (let i = x - quality / 2; i < x + quality / 2; i ++) {
+          for (let j = y - quality / 2; j < y + quality / 2; j ++) {
+            set(i, j, ecolor);
+          }
+        }
+      } else { // is part of the set
+        let ecolor = color("black");
+
+        for (let i = x - quality / 2; i <= x + quality / 2; i ++) { // make it inclusive so we don't clip
+          for (let j = y - quality / 2; j <= y + quality / 2; j ++) {
+            set(i, j, ecolor);
+          }
+        }
+      }
+    }
+  }
+  
+  updatePixels();
+  if (autoCalc) {
+    if (precision < 500) precision++; // so we don't stack overflow
+    if (quality > 1) quality --;
+  }
+}
+
+
+function umouse() { // allows us to change center
+  cx = map(mouseX, 0, width, cx - 1/zoom, cx + 1/zoom);
+  cy = map(mouseY, 0, height, cy - 1/zoom, cy + 1/zoom);
+
+  if (autoCalc) quality = 10;
+}
+
+function scrll(e) {
+  e.preventDefault();
+
+  if (e.deltaY < 0) { // zoom out (gets exponentially smaller for our impatience)
+    zoom *= 1.1;
+  } else {
+    zoom /= 1.1;
+  }
+
+  if (autoCalc) quality = 10;
+}
+
+
+/**
+ * @param pair {Imaginary}
+ * @returns number
+ */
+function develop(pair) {
+  /**
+   * z = 0
+   * c = a + bi
+   */
+
+  // f0(z) = z ** 2 + c
+  // f1(z) = f0(z) ** 2 + c
+  // Remember z can be expressed as 0 + 0i!
+
+  let iterations = 0;
+
+  /**
+   * @param z {Imaginary}
+   * @param c {Imaginary}
+   */
+  function f_n(z, c) {
+    iterations ++;
+
+    if (abs(z.a + z.b) > 15) { // close enough to infinity lol
+      return;
+    }
+
+    if (iterations < precision) return f_n(z.square().add(c), c);
+  }
+
+  f_n(new Imaginary(0, 0), pair);
+
+  return iterations;
+}</script>
+  </head>
+  <body>
+    <button class="reset">Reset</button>
+
+    <div class="mandelbrot"></div>
+
+    <script>function reset() {
+  autoCalc = true;
+  precision = 5;
+  quality = 10;
+
+  zoom = 0.5;
+
+  cx = 0, cy = 0;
+}
+
+reset();
+
+document.querySelector(".reset").addEventListener("click", reset);</script>
+  </body>
+</html>

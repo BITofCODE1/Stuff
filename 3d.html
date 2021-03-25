@@ -1,0 +1,86 @@
+﻿<!DOCTYPE html>
+<html lang="en">
+
+
+<head>
+  <meta charset="utf-8">
+  <meta name="viewport" content="width=device-width, initial-scale=1">
+  <script src="https://cdnjs.cloudflare.com/ajax/libs/p5.js/0.6.0/p5.js">
+  </script>
+  <script src="https://cdnjs.cloudflare.com/ajax/libs/p5.js/0.6.0/addons/p5.sound.js">
+  </script>
+  <script src="https://cdnjs.cloudflare.com/ajax/libs/p5.js/0.6.0/addons/p5.dom.js">
+  </script>
+  <script src="https://rawgit.com/diwi/p5.EasyCam/master/p5.easycam.js">
+  </script>
+  <script>
+  class Cube {
+ constructor(x_, y_, z_, size_, offset_) {
+   this.x = x_;
+   this.y = y_;
+   this.z = z_;
+   this.size = size_;
+   this.offset = offset_;
+   this.angle = 0;
+ }
+
+
+ update(f) {
+   this.y = map(f(this.angle + this.offset), -1, 1, this.size / 2, height - this.size / 2);
+   this.angle += 0.05;
+ }
+
+
+ render() {
+   push();
+   stroke(0);
+   translate(this.x, this.y, this.z);
+   box(this.size);
+   pop();
+ }
+}
+
+
+ </script>
+  <script>
+   const e = Math.exp(1);
+let cam;
+let cubes = [];
+let spacing = 100;
+let nums;
+function setup() {
+ nums = createVector(10, 10);
+ colorMode(HSB, nums.x * nums.y, 1, 1);
+ createCanvas(500, 400, WEBGL);
+ cam = createEasyCam();
+ cam.state.distance = 2000;
+ cam.state.center = [width / 1.5, height / 2, 0];
+ cam.state_reset.distance = 2000;
+ cam.state_reset.center = [width / 1.5, height / 2, 0];
+ for (var j = 0; j < nums.x; j++) {
+   cubes.push([]);
+   for (var i = 0; i < nums.y; i++) {
+     cubes[j].push(new Cube(i * spacing, width / 2, (j - 4) * spacing, spacing, map(i + j, 0, 6, 0, PI)));
+   }
+ }
+}
+
+
+function draw() {
+ background(0);
+ rotateX(-atan(cos(QUARTER_PI)));
+ rotateY(-QUARTER_PI);
+ directionalLight(255, 255, 255, -1, 1, -1);
+ for (var j = 0; j < nums.x; j++) {
+   for (var i = 0; i < nums.y; i++) {
+     fill(i + j * nums.x, 1, 1);
+     cubes[i][j].update(z => cos(z) * sin(z));
+     cubes[i][j].render();
+   }
+ }
+}
+  </script>
+</head>
+<body>
+</body>
+</html>
